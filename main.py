@@ -12,7 +12,7 @@ hpConfig.read("config.ini")
 
 def slog(msg):
 
-   # syslog.syslog(msg)
+    syslog.syslog(msg)
     print(msg)
 
 # Blocking call that processes network traffic, dispatches callbacks and
@@ -24,7 +24,7 @@ hubnames = hpConfig['mqtt']['bluehub_names'].split(",")
 
 mqttClient = mqttcom.MQTTComm(hpConfig["mqtt"]["server_address"], hpConfig["mqtt"]["base_name"],
                               hpConfig["mqtt"]["virtual_topic"],  hubnames)
-onon=True
+onon = True
 
 while onon:
     try:
