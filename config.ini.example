@@ -1,0 +1,8 @@
+[mqtt]
+server_address = 192.168.0.18
+
+virtual_topic = tele/xiaomisensors
+
+# namen der der bluehubs
+base_name = tele/sonoff
+bluehub_names = AFFFEE
