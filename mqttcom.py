@@ -17,6 +17,7 @@ class MQTTComm:
     lastContact = {}
     timeMS = 0
     connected = False
+    online_count = 0
 
     def __init__(self, server_address, base_name, virtual_topic, hub_names, virtual_mac):
         self.server_address = server_address
@@ -35,7 +36,7 @@ class MQTTComm:
     def connect(self):
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-#        self.client.will_set(path.join(self.virtual_topic, "VHUB", "LWT"), payload="Offline", qos=0, retain=True)
+        self.client.will_set(path.join(self.virtual_topic, "VHUB", "LWT"), payload="Offline", qos=0, retain=True)
 
         self.client.connect(self.server_address, 1883, 60)
 
@@ -47,7 +48,7 @@ class MQTTComm:
     def on_connect(self, client, userdata, flags, rc):
         # self.client.publish(path.join(self.tele_topic, "allshutters", "LWT"), payload="Online", qos=0, retain=True)
         self.slog("Connect with result code " + str(rc))
-#        self.client.publish(path.join(self.virtual_topic, "VHUB", "LWT"), payload="Online", qos=0, retain=True)
+        self.client.publish(path.join(self.virtual_topic, "VHUB", "LWT"), payload="Online", qos=0, retain=True)
 
     def on_message(self, client, userdata, msg):
         parts = msg.topic.split("/")
@@ -56,6 +57,10 @@ class MQTTComm:
         print(msg.topic)
         if item == 'LWT':
             payload = msg.payload.decode('utf-8')
+            if payload == "Online":
+                self.online_count += 1
+            elif payload == "Offline":
+                self.online_count -= 1
             print(payload)
 
         if item == 'SENSOR':
