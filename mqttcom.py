@@ -49,6 +49,7 @@ class MQTTComm:
         # self.client.publish(path.join(self.tele_topic, "allshutters", "LWT"), payload="Online", qos=0, retain=True)
         self.slog("Connect with result code " + str(rc))
         self.client.publish(path.join(self.virtual_topic, "VHUB", "LWT"), payload="Online", qos=0, retain=True)
+        self.publish_hass_state()
 
     def on_message(self, client, userdata, msg):
         parts = msg.topic.split("/")
@@ -84,6 +85,19 @@ class MQTTComm:
 
     def loop_forever(self):
         self.client.loop_forever()
+
+    def publish_hass_state(self):
+        hasst = path.join(self.virtual_topic, "VHUB", "HASS_STATE")
+        htmpl = """{
+  "Version": "$VERSION",
+  "BuildDateTime": "2022-04-11T12:04:35",        
+  "RSSI": "100"
+}"""
+        np = {
+            '$VERSION': "1.1"
+        }
+        hastmplout = replace_all(htmpl, np)
+        self.client.publish(hasst, hastmplout)
 
     def publish_hass_core_config(self, devicename):
         # homeassistant/sensor/13DC54_status/config =
