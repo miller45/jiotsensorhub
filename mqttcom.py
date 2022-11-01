@@ -15,7 +15,6 @@ def replace_all(text, dic):
 class MQTTComm:
     sensState = {}
     lastContact = {}
-    rssiState = {}
     timeMS = 0
     connected = False
     online_count = 0
@@ -76,24 +75,15 @@ class MQTTComm:
                         sensordata = data[name]
                         if name not in self.sensState:
                             self.sensState[name] = {}
-                        if name not in self.rssiState:
-                            self.rssiState[name] = {}
                         for skey in sensordata:
                             if skey == "RSSI":
-
-                                self.rssiState[name][hub] = sensordata["RSSI"]
+                                self.sensState[name]["{}_{}".format(skey, hub)] = sensordata[skey]
                             else:
                                 self.sensState[name][skey] = sensordata[skey]
-                        rsdiff = 0
-                        for shub in self.hub_names:
-                            if shub in self.rssiState[name]:
-                                rsdiff -= abs(self.rssiState[name][shub])
-                        self.sensState[name]['RSSIDIFF'] = rsdiff
-
 
                         retopic = path.join(self.virtual_topic, name, 'SENSOR')
                         self.client.publish(retopic, json.dumps(self.sensState[name]))
-            #           print('republish on {}'.format(json.dumps(retopic)))
+
         #  tele/sonoff/13DC54/SENSOR {"Time":"2022-10-28T12:09:22","ATC04b555":{"mac":"a4c13804b555","Temperature":25.1,"Humidity":57.6,"DewPoint":16.2,"Btn":1,"Battery":55,"RSSI":-49}}
 
     def slog(self, msg):
