@@ -15,6 +15,7 @@ def replace_all(text, dic):
 class MQTTComm:
     sensState = {}
     lastContact = {}
+    rssiState = {}
     timeMS = 0
     connected = False
     online_count = 0
@@ -23,7 +24,7 @@ class MQTTComm:
         self.server_address = server_address
         self.base_name = base_name
         self.virtual_topic = virtual_topic
-        self.hubtopics = hub_names
+        self.hub_names = hub_names
         self.virtual_mac = virtual_mac
         #  self.tele_topic = path.join("tele", virtual_topic)
         # self.tele_availtopic = path.join("tele/sonoff")  # needed to pass throught availbility of real devices
@@ -40,7 +41,7 @@ class MQTTComm:
 
         self.client.connect(self.server_address, 1883, 60)
 
-        for tp in self.hubtopics:
+        for tp in self.hub_names:
             subpath = path.join(self.base_name, tp, '#')
             print('subscribing to {}'.format(subpath))
             self.client.subscribe(subpath)
@@ -54,7 +55,7 @@ class MQTTComm:
     def on_message(self, client, userdata, msg):
         parts = msg.topic.split("/")
         item = parts[-1]
-
+        hub = parts[-2]
         print(msg.topic)
         if item == 'LWT':
             payload = msg.payload.decode('utf-8')
@@ -73,9 +74,25 @@ class MQTTComm:
                         name = key
                         self.lastContact[name] = datetime.now()
                         sensordata = data[name]
-                        self.sensState[name] = sensordata
+                        if name not in self.sensState:
+                            self.sensState[name] = {}
+                        if name not in self.rssiState:
+                            self.rssiState[name] = {}
+                        for skey in sensordata:
+                            if skey == "RSSI":
+
+                                self.rssiState[name][hub] = sensordata["RSSI"]
+                            else:
+                                self.sensState[name][skey] = sensordata[skey]
+                        rsdiff = 0
+                        for shub in self.hub_names:
+                            if shub in self.rssiState[name]:
+                                rsdiff -= abs(self.rssiState[name][shub])
+                        self.sensState[name]['RSSIDIFF'] = rsdiff
+
+
                         retopic = path.join(self.virtual_topic, name, 'SENSOR')
-                        self.client.publish(retopic, json.dumps(sensordata))
+                        self.client.publish(retopic, json.dumps(self.sensState[name]))
             #           print('republish on {}'.format(json.dumps(retopic)))
         #  tele/sonoff/13DC54/SENSOR {"Time":"2022-10-28T12:09:22","ATC04b555":{"mac":"a4c13804b555","Temperature":25.1,"Humidity":57.6,"DewPoint":16.2,"Btn":1,"Battery":55,"RSSI":-49}}
 
@@ -102,7 +119,7 @@ class MQTTComm:
     def publish_hass_core_config(self, devicename):
         # homeassistant/sensor/13DC54_status/config =
         htmpl = """{"name":"BlueHub $DEVICE status","stat_t":"tele/sonoff/$DEVICE/HASS_STATE","avty_t":"tele/sonoff/$DEVICE/LWT","pl_avail":"Online","pl_not_avail":"Offline","json_attr_t":"tele/sonoff/$DEVICE/HASS_STATE","unit_of_meas":"%","val_tpl":"{{value_json['RSSI']}}","ic":"mdi:information-outline","uniq_id":"$DEVICE_status","dev":{"ids":["$DEVICE"],"name":"BlueHub$DEVICE","mdl":"Generic","sw":"10.0.0.4(tasmota)","mf":"Tasmota"}}"""
-        #htmpl = """{"name":"VBlueHub status","stat_t":"$SHASST","avty_t":"$SLWT","pl_avail":"Online","pl_not_avail":"Offline","json_attr_t":"$SHASST","unit_of_meas":"%","val_tpl":"{{value_json['RSSI']}}","ic":"mdi:information-outline","uniq_id":"$DEVICE_status","dev":{"ids":["$DEVICE"],"name":"VBlueHub","mdl":"Generic","sw":"$VERSION(jiotsensorhub)","mf":"JIOT"}}"""
+        # htmpl = """{"name":"VBlueHub status","stat_t":"$SHASST","avty_t":"$SLWT","pl_avail":"Online","pl_not_avail":"Offline","json_attr_t":"$SHASST","unit_of_meas":"%","val_tpl":"{{value_json['RSSI']}}","ic":"mdi:information-outline","uniq_id":"$DEVICE_status","dev":{"ids":["$DEVICE"],"name":"VBlueHub","mdl":"Generic","sw":"$VERSION(jiotsensorhub)","mf":"JIOT"}}"""
         hasst = path.join(self.virtual_topic, devicename, "HASS_STATE")
         np = {
             '$DEVICE': devicename,
