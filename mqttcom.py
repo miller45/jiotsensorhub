@@ -55,7 +55,7 @@ class MQTTComm:
         parts = msg.topic.split("/")
         item = parts[-1]
         hub = parts[-2]
-        print(msg.topic)
+        # print(msg.topic)
         if item == 'LWT':
             payload = msg.payload.decode('utf-8')
             if payload == "Online":
