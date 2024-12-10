@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+import paho.mqtt.client as mqtt
+import posixpath as path
+import syslog
+import json
+from caseconverter import kebabcase
+from datetime import datetime
+
 import paho.mqtt.client as mqtt
 import posixpath as path
 import syslog
@@ -18,6 +26,8 @@ class MQTTComm:
     timeMS = 0
     connected = False
     online_count = 0
+    last_main_exception = None # if main thread (main.py) caught an exception
+    last_main_exception_localtime = None
 
     def __init__(self, server_address, base_name, virtual_topic, hub_names, virtual_mac):
         self.server_address = server_address
@@ -101,11 +111,15 @@ class MQTTComm:
         hasst = path.join(self.virtual_topic, "VHUB", "HASS_STATE")
         htmpl = """{
   "Version": "$VERSION",
-  "BuildDateTime": "2022-04-11T12:04:35",        
-  "RSSI": "100"
+  "BuildDateTime": "2024-12-09T12:04:35",        
+  "RSSI": "100",
+  "LastException":"$EXCEPTION",
+  "LastExceptionTime":"$EXCEPTION_TIME"
 }"""
         np = {
-            '$VERSION': "1.1"
+            '$VERSION': "1.2",
+            '$EXCEPTION': self.last_main_exception or "None",
+            '$EXCEPTION_TIME': self.last_main_exception_localtime or "None",
         }
         hastmplout = replace_all(htmpl, np)
         self.client.publish(hasst, hastmplout)

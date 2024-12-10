@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 import paho.mqtt.client as mqtt
 import configparser
 import mqttcom
 import syslog
 import time
+import datetime
+
 
 print("Starting MQTT Sensor Hub")
 
@@ -25,11 +28,14 @@ hubnames = hpConfig['mqtt']['bluehub_names'].split(",")
 mqttClient = mqttcom.MQTTComm(hpConfig["mqtt"]["server_address"], hpConfig["mqtt"]["base_name"],
                               hpConfig["mqtt"]["virtual_topic"], hubnames, "00000000003C")
 onon = True
-mode = 0
+mode = 0 # do not touch:needs only be changed once for device setup e.g. whole homeassistant erased
 REALHUB = "13DC54"
 FAKEHUB = "VHUB"
 
 VERSION = "1.1"
+
+main_exception_counter=0
+last_main_exception_counter=0
 
 while onon:
     try:
@@ -44,11 +50,18 @@ while onon:
         elif mode == 1:
             mqttClient.publish_hass_core_config(REALHUB)
 
+#        if main_exception_counter > last_main_exception_counter:
+#            last_main_exception_counter = main_exception_counter
+
+
         mqttClient.loop_forever()
 
     except BaseException as error:
         slog('An exception occurred during onon')  #: {}'.format(error))
         slog('{}: {}'.format(type(error).__name__, error))
+        mqttClient.last_main_exception_localtime=datetime.datetime.now().isoformat()
+        mqttClient.last_main_exception = '{}: {}'.format(type(error).__name__, error)
+        main_exception_counter+=1
         if type(error) == KeyboardInterrupt:
             exit(0)
         slog("restarting after 5 secs")
