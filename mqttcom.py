@@ -6,14 +6,6 @@ import json
 from caseconverter import kebabcase
 from datetime import datetime
 
-import paho.mqtt.client as mqtt
-import posixpath as path
-import syslog
-import json
-from caseconverter import kebabcase
-from datetime import datetime
-
-
 def replace_all(text, dic):
     for i in dic:
         text = text.replace(i, dic[i])
