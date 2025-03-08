@@ -19,7 +19,7 @@ def slog(msg):
 hubnames = hpConfig['mqtt']['bluehub_names'].split(",")
 
 mqttClient = mqttcom.MQTTComm(hpConfig["mqtt"]["server_address"], hpConfig["mqtt"]["base_name"],
-                              hpConfig["mqtt"]["virtual_topic"], hubnames, "00000000003C")
+                              hpConfig["mqtt"]["virtual_topic"], hubnames, hpConfig["mqtt"]["virtual_mac"])
 onon = True
 mode = 0 # do not touch:needs only be changed once for device setup e.g. whole homeassistant erased
 REALHUB = "13DC54"
