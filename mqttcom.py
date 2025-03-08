@@ -21,7 +21,9 @@ class MQTTComm:
     last_main_exception = None # if main thread (main.py) caught an exception
     last_main_exception_localtime = None
 
-    def __init__(self, server_address, base_name, virtual_topic, hub_names, virtual_mac):
+    def __init__(self, server_address, version, base_name, virtual_topic, hub_names, virtual_mac, auto_connect=True):
+        self.watersensor_topics = None
+        self.version = version
         self.server_address = server_address
         self.base_name = base_name
         self.virtual_topic = virtual_topic
@@ -33,7 +35,10 @@ class MQTTComm:
 
         self.tasmota_topic = "tasmota/discovery/{}".format(virtual_mac)
         self.client = mqtt.Client()
-        self.connect()
+        if auto_connect:
+            self.connect()
+    def configure_waterstats(self,waterpulse_topic, water_liter_topic):
+        self.watersensor_topics = [waterpulse_topic, water_liter_topic]
 
     def connect(self):
         self.client.on_connect = self.on_connect
@@ -46,6 +51,11 @@ class MQTTComm:
             subpath = path.join(self.base_name, tp, '#')
             print('subscribing to {}'.format(subpath))
             self.client.subscribe(subpath)
+        if not self.watersensor_topics is None:
+            for ftp in self.watersensor_topics:
+                print('subscribing to {}'.format(ftp))
+                self.client.subscribe(ftp)
+
 
     def on_connect(self, client, userdata, flags, rc):
         # self.client.publish(path.join(self.tele_topic, "allshutters", "LWT"), payload="Online", qos=0, retain=True)
@@ -64,7 +74,7 @@ class MQTTComm:
                 self.online_count += 1
             elif payload == "Offline":
                 self.online_count -= 1
-            print(payload)
+            print(f"got LWT message: {payload}")
 
         if item == 'SENSOR':
             payload = msg.payload.decode('utf-8')
@@ -109,7 +119,7 @@ class MQTTComm:
   "LastExceptionTime":"$EXCEPTION_TIME"
 }"""
         np = {
-            '$VERSION': "1.2",
+            '$VERSION': self.version,
             '$EXCEPTION': self.last_main_exception or "None",
             '$EXCEPTION_TIME': self.last_main_exception_localtime or "None",
         }

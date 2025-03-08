@@ -16,16 +16,20 @@ def slog(msg):
     syslog.syslog(msg)
     print(msg)
 
-hubnames = hpConfig['mqtt']['bluehub_names'].split(",")
-
-mqttClient = mqttcom.MQTTComm(hpConfig["mqtt"]["server_address"], hpConfig["mqtt"]["base_name"],
-                              hpConfig["mqtt"]["virtual_topic"], hubnames, hpConfig["mqtt"]["virtual_mac"])
+all_hubnames = hpConfig['mqtt']['bluehub_names'].split(",")
+VERSION = "1.2.1"
+mqttClient = mqttcom.MQTTComm(hpConfig["mqtt"]["server_address"], VERSION,
+                              base_name=hpConfig["mqtt"]["base_name"],
+                              virtual_topic=hpConfig["mqtt"]["virtual_topic"],
+                              hub_names=all_hubnames, virtual_mac=hpConfig["mqtt"]["virtual_mac"],
+                              auto_connect=False
+                              )
+mqttClient.configure_waterstats(hpConfig["watermqtt"]["waterpulse_topic"],hpConfig["watermqtt"]["waterliter_topic"])
 onon = True
 mode = 0 # do not touch:needs only be changed once for device setup e.g. whole homeassistant erased
 REALHUB = "13DC54"
 FAKEHUB = "VHUB"
 
-VERSION = "1.1"
 
 main_exception_counter=0
 last_main_exception_counter=0
