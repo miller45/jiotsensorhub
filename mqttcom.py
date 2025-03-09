@@ -150,8 +150,10 @@ class MQTTComm:
                             hkey = "RSSI_{}".format(hub)
                             if not hkey in self.sensState[name]:
                                self.sensState[name][hkey] = 0
-                        self.client.publish(retopic, json.dumps(self.sensState[name]))
+                       # debugout(f"Would publish on {retopic}")
 
+                        self.client.publish(retopic, json.dumps(self.sensState[name]))
+        # data example
         #  tele/sonoff/13DC54/SENSOR {"Time":"2022-10-28T12:09:22","ATC04b555":{"mac":"a4c13804b555","Temperature":25.1,"Humidity":57.6,"DewPoint":16.2,"Btn":1,"Battery":55,"RSSI":-49}}
 
     def slog(self, msg):
