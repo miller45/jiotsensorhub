@@ -128,10 +128,10 @@ class MQTTComm:
                 if tsdelta>0 and wldelta>0:
                     # tsdelta is seconds
                     wspeed=wldelta/tsdelta*60
-                    debugout(f"wspeed {wspeed}")
-
+                   # debugout(f"wspeed {wspeed}")
+                    self.client.publish(retopic, f"{wspeed}")
                 else:
-                    self.client.publish(retopic,0.0)
+                    self.client.publish(retopic,"0")
 
         if hub in self.hub_names and item == 'SENSOR':
             payload = msg.payload.decode('utf-8')
@@ -155,9 +155,9 @@ class MQTTComm:
                             hkey = "RSSI_{}".format(hub)
                             if not hkey in self.sensState[name]:
                                self.sensState[name][hkey] = 0
-                       # debugout(f"Would publish on {retopic}")
+                        debugout(f"Would publish on {retopic}")
 
-                        self.client.publish(retopic, json.dumps(self.sensState[name]))
+                        #self.client.publish(retopic, json.dumps(self.sensState[name]))
         # data example
         #  tele/sonoff/13DC54/SENSOR {"Time":"2022-10-28T12:09:22","ATC04b555":{"mac":"a4c13804b555","Temperature":25.1,"Humidity":57.6,"DewPoint":16.2,"Btn":1,"Battery":55,"RSSI":-49}}
 
