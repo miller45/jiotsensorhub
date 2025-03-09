@@ -13,6 +13,9 @@ def replace_all(text, dic):
         text = text.replace(i, dic[i])
     return text
 
+def debugout(msg):
+    print(msg)
+
 
 class MQTTComm:
     sensState = {}
@@ -41,6 +44,7 @@ class MQTTComm:
         self.client = mqtt.Client()
         if auto_connect:
             self.connect()
+
     def configure_waterstats(self,waterpulse_topic, water_liter_topic):
         self.watersensor_topics = [waterpulse_topic, water_liter_topic]
 
@@ -51,18 +55,22 @@ class MQTTComm:
 
         self.client.connect(self.server_address, 1883, 60)
 
+        for tp in self.hub_names:
+            subpath = path.join(self.base_name, tp, '#')
+            print('subscribing to {}'.format(subpath))
+            self.client.subscribe(subpath)
 
         if not self.watersensor_topics is None:
             for ftp in self.watersensor_topics:
-                print('subscribing to {}'.format(ftp))
+                debugout('subscribing to {}'.format(ftp))
                 self.client.subscribe(ftp)
 
 
     def on_connect(self, client, userdata, flags, rc):
         # self.client.publish(path.join(self.tele_topic, "allshutters", "LWT"), payload="Online", qos=0, retain=True)
-        self.slog("Connect with result code " + str(rc))
+        self.slog("MQTTCom: connect with result code " + str(rc))
         self.client.publish(path.join(self.virtual_topic, "VHUB", "LWT"), payload="Online", qos=0, retain=True)
-      #  self.publish_hass_state()
+        self.publish_hass_state()
 
     def on_message(self, client, userdata, msg):
         parts = msg.topic.split("/")
@@ -75,14 +83,14 @@ class MQTTComm:
                 self.online_count += 1
             elif payload == "Offline":
                 self.online_count -= 1
-            print(f"got LWT message: {payload}")
+            debugout(f"got LWT message: {payload}")
         if hub=="81" and item == 'SENSOR':
             payload = msg.payload.decode('utf-8')
             if len(payload) > 2:
                 data = json.loads(payload)
                 if "COUNTER" in data:
                     for key in data['COUNTER']:
-                        print(f"{key}: {data['COUNTER'][key]}")
+                        debugout(f"{key}: {data['COUNTER'][key]}")
         if hub == "81" and item == 'WATERLITER':
             nowts = msg.timestamp
             prevts = None
@@ -98,19 +106,19 @@ class MQTTComm:
                 wfl = float(wl)
                 if  "WATERLITER" in self.lastValues:
                     prevwl = self.lastValues["WATERLITER" ]
-                print(f"WATER LITER {wfl}")
+                debugout(f"WATER LITER {wfl}")
                 self.lastValues["WATERLITER"]=wfl
 
             tsdelta=0
             if not prevts is None and not prevwl is None:
                 tsdelta = nowts-prevts
-                print(f"TS delta {tsdelta}")
+                debugout(f"TS delta {tsdelta}")
                 wldelta = wfl - prevwl
                 retopic = path.join(self.virtual_topic, "WATERSPEED1")
                 if tsdelta>0 and wldelta>0:
                     # tsdelta is seconds
                     wspeed=wldelta/tsdelta*60
-                    print(f"wspeed {wspeed}")
+                    debugout(f"wspeed {wspeed}")
 
                 else:
                     self.client.publish(retopic,0.0)
