@@ -3,3 +3,4 @@ venv3
 *.pyc
 .idea
 config.ini
+config.local.ini
