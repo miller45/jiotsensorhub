@@ -4,12 +4,18 @@ import mqttcom
 import syslog
 import time
 import datetime
+import os.path
 
 
 print("Starting MQTT Sensor Hub")
 
 hpConfig = configparser.ConfigParser()
-hpConfig.read("config.ini")
+
+if os.path.exists("config.ini.local"):
+    hpConfig.read("config.ini.local")
+else:
+    hpConfig.read("config.ini")
+
 
 
 def slog(msg):
@@ -27,6 +33,8 @@ mqttClient = mqttcom.MQTTComm(hpConfig["mqtt"]["server_address"], VERSION,
 mqttClient.configure_waterstats(hpConfig["watermqtt"]["waterpulse_topic"],hpConfig["watermqtt"]["waterliter_topic"])
 onon = True
 mode = 0 # do not touch:needs only be changed once for device setup e.g. whole homeassistant erased
+
+# these are only for mode 1 and 2
 REALHUB = "13DC54"
 FAKEHUB = "VHUB"
 
