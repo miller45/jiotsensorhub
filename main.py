@@ -34,6 +34,8 @@ FAKEHUB = "VHUB"
 main_exception_counter=0
 last_main_exception_counter=0
 
+mqttClient.connect()
+
 while onon:
     try:
 
