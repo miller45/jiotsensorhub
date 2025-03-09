@@ -8,6 +8,7 @@ from datetime import datetime
 import re
 
 
+
 def replace_all(text, dic):
     for i in dic:
         text = text.replace(i, dic[i])
@@ -29,6 +30,7 @@ class MQTTComm:
     last_main_exception_localtime = None
 
     def __init__(self, server_address, version, base_name, virtual_topic, hub_names, virtual_mac, auto_connect=True):
+        self.waterhub = None
         self.watersensor_topics = None
         self.version = version
         self.server_address = server_address
@@ -45,8 +47,15 @@ class MQTTComm:
         if auto_connect:
             self.connect()
 
+    def __del__(self):
+        if not self.client is None and self.client.is_connected():
+            self.client.disconnect()
+
+
     def configure_waterstats(self,waterpulse_topic, water_liter_topic):
         self.watersensor_topics = [waterpulse_topic, water_liter_topic]
+        self.waterhub = waterpulse_topic.split("/")[-2]
+        debugout(self.waterhub)
 
     def connect(self):
         self.client.on_connect = self.on_connect
@@ -84,14 +93,15 @@ class MQTTComm:
             elif payload == "Offline":
                 self.online_count -= 1
             debugout(f"got LWT message: {payload}")
-        if hub=="81" and item == 'SENSOR':
+
+        if hub ==  self.waterhub and item == 'SENSOR':
             payload = msg.payload.decode('utf-8')
             if len(payload) > 2:
                 data = json.loads(payload)
                 if "COUNTER" in data:
                     for key in data['COUNTER']:
                         debugout(f"{key}: {data['COUNTER'][key]}")
-        if hub == "81" and item == 'WATERLITER':
+        if hub == self.waterhub and item == 'WATERLITER':
             nowts = msg.timestamp
             prevts = None
             if "WATERLITER" in self.lastTimeStamps:
@@ -122,11 +132,6 @@ class MQTTComm:
 
                 else:
                     self.client.publish(retopic,0.0)
-
-
-
-
-
 
         if hub in self.hub_names and item == 'SENSOR':
             payload = msg.payload.decode('utf-8')
