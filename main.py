@@ -11,8 +11,8 @@ print("Starting MQTT Sensor Hub")
 
 hpConfig = configparser.ConfigParser()
 
-if os.path.exists("config.ini.local"):
-    hpConfig.read("config.ini.local")
+if os.path.exists("config.local.ini"):
+    hpConfig.read("config.local.ini")
 else:
     hpConfig.read("config.ini")
 
